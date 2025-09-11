@@ -1,4 +1,4 @@
- package com.flightbooking.fbs.services;
+package com.flightbooking.fbs.services;
 
 import com.flightbooking.fbs.entity.User;
 import com.flightbooking.fbs.repository.UserRepository;
@@ -28,6 +28,14 @@ public class UserService {
     // Get user by email (useful for login later)
     public Optional<User> getUserByEmail(String email) {
         return Optional.ofNullable(userRepository.findByEmail(email));
+    }
+    public boolean deleteUser(Long id) {
+        Optional<User> userOpt = userRepository.findById(id);
+        if (userOpt.isPresent()) {
+            userRepository.deleteById(id);
+            return true; // deleted successfully
+        }
+        return false; // user not found
     }
 
 }

@@ -1,3 +1,4 @@
+
 $baseUrl = "http://localhost:8081"
 
 while ($true) {
@@ -95,10 +96,24 @@ while ($true) {
                         $response | ConvertTo-Json -Depth 10
                     }
                     "POST" {
-                        $userId = Read-Host "Enter user ID"
-                        $flightId = Read-Host "Enter flight ID"
+                        do {
+                            $userId = Read-Host "Enter user ID (leave blank if using name)"
+                            $userName = if ([string]::IsNullOrWhiteSpace($userId)) { Read-Host "Enter user name" } else { $null }
+                        } while ([string]::IsNullOrWhiteSpace($userId) -and [string]::IsNullOrWhiteSpace($userName))
 
-                        $response = Invoke-RestMethod -Uri "$baseUrl/api/bookings/book?userId=$userId&flightId=$flightId" -Method POST
+                        do {
+                            $flightId = Read-Host "Enter flight ID (leave blank if using flight number)"
+                            $flightNumber = if ([string]::IsNullOrWhiteSpace($flightId)) { Read-Host "Enter flight number" } else { $null }
+                        } while ([string]::IsNullOrWhiteSpace($flightId) -and [string]::IsNullOrWhiteSpace($flightNumber))
+
+                        $seatsBooked = Read-Host "Enter number of seats to book"
+
+                        $uri = "$baseUrl/api/bookings/book?"
+                        if ($userId) { $uri += "userId=$userId&" } else { $uri += "userName=$userName&" }
+                        if ($flightId) { $uri += "flightId=$flightId&" } else { $uri += "flightNumber=$flightNumber&" }
+                        $uri += "seatsBooked=$seatsBooked"
+
+                        $response = Invoke-RestMethod -Uri $uri -Method POST
                         Write-Host "✅ Booking created successfully." -ForegroundColor Green
                         $response | ConvertTo-Json -Depth 10
                     }
@@ -139,13 +154,15 @@ while ($true) {
                     "DELETE" {
                         $id = Read-Host "User ID to delete"
                         try {
-                            Invoke-RestMethod -Uri "$baseUrl/api/users/$id" -Method DELETE
+                            # Use -Method DELETE without a body
+                            $response = Invoke-RestMethod -Uri "$baseUrl/api/users/$id" -Method DELETE -UseBasicParsing
                             Write-Host "✅ User deleted successfully." -ForegroundColor Green
+                            # Optional: display server response if any
+                            if ($response) { $response | ConvertTo-Json -Depth 10 }
                         } catch {
                             Write-Host "❌ Failed to delete user: $($_.Exception.Message)" -ForegroundColor Red
                         }
                     }
-
                 }
             }
         }

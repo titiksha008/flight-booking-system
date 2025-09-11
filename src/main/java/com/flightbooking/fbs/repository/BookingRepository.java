@@ -1,4 +1,4 @@
-package com.flightbooking.fbs.repository;
+ package com.flightbooking.fbs.repository;
 
 import com.flightbooking.fbs.entity.Booking;
 import org.springframework.data.jpa.repository.JpaRepository;

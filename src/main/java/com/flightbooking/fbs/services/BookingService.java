@@ -1,4 +1,4 @@
- package com.flightbooking.fbs.services;
+package com.flightbooking.fbs.services;
 
 import com.flightbooking.fbs.entity.Booking;
 import com.flightbooking.fbs.entity.Flight;
@@ -27,18 +27,30 @@ public class BookingService {
     }
 
     // Book a flight
-    public Booking bookFlight(Long userId, Long flightId) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        Optional<Flight> flightOpt = flightRepository.findById(flightId);
+    public Booking bookFlight(Long userId, String userName, Long flightId, String flightNumber, int seatsBooked) {
 
-        if (userOpt.isPresent() && flightOpt.isPresent()) {
-            Booking booking = new Booking();
-            booking.setUser(userOpt.get());
-            booking.setFlight(flightOpt.get());
-            return bookingRepository.save(booking);
+        Optional<User> userOpt = (userId != null) ?
+                userRepository.findById(userId) :
+                userRepository.findByName(userName);
+
+        Optional<Flight> flightOpt = (flightId != null) ?
+                flightRepository.findById(flightId) :
+                flightRepository.findByFlightNumber(flightNumber);
+
+        if (userOpt.isEmpty() || flightOpt.isEmpty()) {
+            throw new RuntimeException("User or Flight not found");
         }
-        throw new RuntimeException("User or Flight not found");
+
+        Booking booking = new Booking();
+        booking.setUser(userOpt.get());
+        booking.setFlight(flightOpt.get());
+        booking.setSeatsBooked(seatsBooked);
+        booking.setBookingDate(java.time.LocalDate.now().toString());
+        booking.setStatus("CONFIRMED");
+
+        return bookingRepository.save(booking);
     }
+
 
     // Cancel a booking
     public void cancelBooking(Long bookingId) {

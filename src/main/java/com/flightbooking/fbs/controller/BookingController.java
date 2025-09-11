@@ -26,9 +26,19 @@ public class BookingController {
 
     // Book a flight
     @PostMapping("/book")
-    public Booking bookFlight(@RequestParam Long userId,
-                              @RequestParam Long flightId) {
-        return bookingService.bookFlight(userId, flightId);
+    public Booking bookFlight(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String userName,
+            @RequestParam(required = false) Long flightId,
+            @RequestParam(required = false) String flightNumber,
+            @RequestParam int seatsBooked) {
+
+        if ((userId == null && (userName == null || userName.isBlank())) ||
+                (flightId == null && (flightNumber == null || flightNumber.isBlank()))) {
+            throw new IllegalArgumentException("You must provide either userId or userName, and either flightId or flightNumber");
+        }
+
+        return bookingService.bookFlight(userId, userName, flightId, flightNumber, seatsBooked);
     }
 
     // Cancel booking

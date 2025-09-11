@@ -3,6 +3,8 @@ package com.flightbooking.fbs.controller;
 import com.flightbooking.fbs.entity.User;
 import com.flightbooking.fbs.services.UserService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
 
@@ -34,4 +36,17 @@ public class UserController {
 
         return userService.getUserByEmail(email);
     }
+
+    // Delete user by ID
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+        boolean deleted = userService.deleteUser(id); // call service method
+        if (deleted) {
+            return ResponseEntity.ok("User deleted successfully ✅");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("User with ID " + id + " not found ❌");
+        }
+    }
+
 }
