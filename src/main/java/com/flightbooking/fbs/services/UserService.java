@@ -3,7 +3,7 @@ package com.flightbooking.fbs.services;
 import com.flightbooking.fbs.entity.User;
 import com.flightbooking.fbs.repository.UserRepository;
 import org.springframework.stereotype.Service;
-
+import java.util.List; // import this
 import java.util.Optional;
 
 @Service
@@ -37,5 +37,10 @@ public class UserService {
         }
         return false; // user not found
     }
+    // NEW METHOD: Get all users
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
 
 }

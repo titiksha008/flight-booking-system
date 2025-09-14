@@ -40,9 +40,20 @@ public class FlightService {
 
 
     // Delete Flight
-    public void deleteFlight(Long id) {
-        flightRepository.deleteById(id);
+//    public void deleteFlight(Long id) {
+//        flightRepository.deleteById(id);
+//    }
+    // In FlightService.java
+    public boolean deleteFlight(Long id) {
+        Optional<Flight> flight = flightRepository.findById(id);
+        if (flight.isPresent()) {
+            flightRepository.deleteById(id);
+            return true;
+        } else {
+            return false;
+        }
     }
+
 
     // Get All Flights
     public List<Flight> getAllFlights() {

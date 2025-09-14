@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -18,35 +19,52 @@ public class UserController {
         this.userService = userService;
     }
 
-    // Register new user
+    // ✅ Register new user
     @PostMapping("/register")
-    public User registerUser(@RequestBody User user) {
-        return userService.registerUser(user);
+    public ResponseEntity<String> registerUser(@RequestBody User user) {
+        User savedUser = userService.registerUser(user);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body("👤 User registered successfully! User ID: " + savedUser.getId());
     }
 
-    // Get user by ID
+    // ✅ Get user by ID
     @GetMapping("/{id}")
-    public Optional<User> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id);
+    public ResponseEntity<?> getUserById(@PathVariable Long id) {
+        Optional<User> user = userService.getUserById(id);
+        return user.<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("❌ User with ID " + id + " not found."));
     }
 
-    // Get user by email
+    // ✅ Get all users
+    @GetMapping
+    public ResponseEntity<?> getAllUsers() {
+        List<User> users = userService.getAllUsers();
+        if (users.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                    .body("⚠️ No users found.");
+        }
+        return ResponseEntity.ok(users);
+    }
+
+    // ✅ Get user by email
     @GetMapping("/email/{email}")
-    public Optional<User> getUserByEmail(@PathVariable String email) {
-
-        return userService.getUserByEmail(email);
+    public ResponseEntity<?> getUserByEmail(@PathVariable String email) {
+        Optional<User> user = userService.getUserByEmail(email);
+        return user.<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("❌ User with email " + email + " not found."));
     }
 
-    // Delete user by ID
+    // ✅ Delete user by ID
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
-        boolean deleted = userService.deleteUser(id); // call service method
+        boolean deleted = userService.deleteUser(id);
         if (deleted) {
-            return ResponseEntity.ok("User deleted successfully ✅");
+            return ResponseEntity.ok("🗑️ User with ID " + id + " deleted successfully!");
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("User with ID " + id + " not found ❌");
+                    .body("❌ User with ID " + id + " not found.");
         }
     }
-
 }

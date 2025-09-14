@@ -26,9 +26,8 @@ public class BookingService {
         this.userRepository = userRepository;
     }
 
-    // Book a flight
+    // ✅ Book a flight
     public Booking bookFlight(Long userId, String userName, Long flightId, String flightNumber, int seatsBooked) {
-
         Optional<User> userOpt = (userId != null) ?
                 userRepository.findById(userId) :
                 userRepository.findByName(userName);
@@ -51,30 +50,32 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-
-    // Cancel a booking
-    public void cancelBooking(Long bookingId) {
-        bookingRepository.deleteById(bookingId);
+    // ✅ Cancel a booking (returns boolean)
+    public boolean cancelBooking(Long bookingId) {
+        if (bookingRepository.existsById(bookingId)) {
+            bookingRepository.deleteById(bookingId);
+            return true; // Booking deleted
+        }
+        return false; // Booking not found
     }
 
-    // Get all bookings for a user
+    // ✅ Get all bookings for a user
     public List<Booking> getBookingsByUser(Long userId) {
         return bookingRepository.findByUserId(userId);
     }
 
-    // Get all bookings for a flight
+    // ✅ Get all bookings for a flight
     public List<Booking> getBookingsByFlight(Long flightId) {
         return bookingRepository.findByFlightId(flightId);
     }
 
-    // Get all bookings
+    // ✅ Get all bookings
     public List<Booking> getAllBookings() {
         return bookingRepository.findAll();
     }
 
-    // Get booking by ID
+    // ✅ Get booking by ID
     public Optional<Booking> getBookingById(Long bookingId) {
         return bookingRepository.findById(bookingId);
     }
-
 }

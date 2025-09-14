@@ -2,17 +2,11 @@ package com.flightbooking.fbs.controller;
 
 import com.flightbooking.fbs.entity.Booking;
 import com.flightbooking.fbs.services.BookingService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/bookings")
@@ -24,9 +18,9 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
-    // Book a flight
+    // ✅ Book a flight
     @PostMapping("/book")
-    public Booking bookFlight(
+    public ResponseEntity<String> bookFlight(
             @RequestParam(required = false) Long userId,
             @RequestParam(required = false) String userName,
             @RequestParam(required = false) Long flightId,
@@ -35,28 +29,43 @@ public class BookingController {
 
         if ((userId == null && (userName == null || userName.isBlank())) ||
                 (flightId == null && (flightNumber == null || flightNumber.isBlank()))) {
-            throw new IllegalArgumentException("You must provide either userId or userName, and either flightId or flightNumber");
+            return ResponseEntity.badRequest().body("❌ User or Flight details are missing!");
         }
 
-        return bookingService.bookFlight(userId, userName, flightId, flightNumber, seatsBooked);
+        Booking booking = bookingService.bookFlight(userId, userName, flightId, flightNumber, seatsBooked);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body("✅ Booking confirmed! Your booking ID is: " + booking.getId());
     }
 
-    // Cancel booking
+    // ✅ Cancel booking
     @DeleteMapping("/cancel/{id}")
-    public void cancelBooking(@PathVariable Long id) {
-        bookingService.cancelBooking(id);
+    public ResponseEntity<String> cancelBooking(@PathVariable Long id) {
+        boolean cancelled = bookingService.cancelBooking(id);
+        if (cancelled) {
+            return ResponseEntity.ok("🛑 Booking with ID " + id + " cancelled successfully.");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("❌ Booking with ID " + id + " not found.");
+        }
     }
 
-    // Get all bookings
+    // ✅ Get all bookings
     @GetMapping
-    public List<Booking> getAllBookings() {
-        return bookingService.getAllBookings();
+    public ResponseEntity<?> getAllBookings() {
+        List<Booking> bookings = bookingService.getAllBookings();
+        if (bookings.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT)
+                    .body("⚠️ No bookings available.");
+        }
+        return ResponseEntity.ok(bookings);
     }
 
-    // Get booking by ID
+    // ✅ Get booking by ID
     @GetMapping("/{id}")
-    public Optional<Booking> getBookingById(@PathVariable Long id) {
-        return bookingService.getBookingById(id);
+    public ResponseEntity<?> getBookingById(@PathVariable Long id) {
+        return bookingService.getBookingById(id)
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body("❌ Booking with ID " + id + " not found."));
     }
-
 }

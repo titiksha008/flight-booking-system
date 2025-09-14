@@ -33,12 +33,14 @@ public class Flight {
     @Column(name = "arrival_time")
     private String arrivalTime;
 
-    @Column(name = "total_seats")
-    private int totalSeats;
-
     @Column(name = "available_seats")
     private int availableSeats;
 
     @Column(name = "price")
     private double price;
+
+    @Column(name = "total_seats", nullable = false)
+    private int totalSeats;
+
+
 }

@@ -1,16 +1,34 @@
 
 $baseUrl = "http://localhost:8081"
 
+Write-Host "Welcome to the Flight Booking System!" -ForegroundColor Cyan
+
 while ($true) {
-    $resource = Read-Host "Enter resource (FLIGHT, BOOKING, USER) or 'exit' to quit"
+    $resource = Read-Host "Choose what you want to manage: FLIGHT, BOOKING, USER (or type 'exit' to quit)"
     if ($resource -eq "exit") { break }
 
-    $action = Read-Host "Enter action (GET, POST, PUT, DELETE)"
+    # Show friendly options based on resource
+    $actionPrompt = switch ($resource.ToUpper()) {
+        "FLIGHT"  { "Choose operation: 1-View flights, 2-Add flight, 3-Update flight, 4-Delete flight" }
+        "BOOKING" { "Choose operation: 1-View bookings, 2-Book a flight, 3-Cancel a booking" }
+        "USER"    { "Choose operation: 1-View users, 2-Register new user, 3-Delete user" }
+        Default   { Write-Host "Invalid choice! Enter FLIGHT, BOOKING, USER or exit." -ForegroundColor Red; continue }
+    }
+    $actionChoice = Read-Host $actionPrompt
+
+    # Map friendly numbers to operations
+    $operation = switch ($actionChoice) {
+        "1" { "GET" }
+        "2" { "POST" }
+        "3" { if ($resource -eq "FLIGHT") { "PUT" } else { "DELETE" } }
+        "4" { "DELETE" }
+        Default { Write-Host "Invalid operation choice!" -ForegroundColor Red; continue }
+    }
 
     try {
         switch ($resource.ToUpper()) {
             "FLIGHT" {
-                switch ($action.ToUpper()) {
+                switch ($operation) {
                     "GET" {
                         $id = Read-Host "Enter flight ID (leave blank for all)"
                         if ([string]::IsNullOrWhiteSpace($id)) {
@@ -18,125 +36,144 @@ while ($true) {
                         } else {
                             $response = Invoke-RestMethod -Uri "$baseUrl/api/flights/$id" -Method GET
                         }
-                        $response | ConvertTo-Json -Depth 10
-                    }
-                    "POST" {
-                        # ✅ Working already - unchanged
-                        $flightNumber = Read-Host "Enter flight number"
-                        $airline = Read-Host "Enter airline"
-                        $source = Read-Host "Enter source"
-                        $destination = Read-Host "Enter destination"
-                        $departureTime = Read-Host "Enter departure time"
-                        $arrivalTime = Read-Host "Enter arrival time"
-                        $availableSeats = Read-Host "Enter available seats"
-                        $price = Read-Host "Enter price"
 
-                        $body = @{
-                            flightNumber = $flightNumber
-                            airline = $airline
-                            source = $source
-                            destination = $destination
-                            departureTime = $departureTime
-                            arrivalTime = $arrivalTime
-                            availableSeats = [int]$availableSeats
-                            price = [double]$price
-                        } | ConvertTo-Json
-
-                        $response = Invoke-RestMethod -Uri "$baseUrl/api/flights" -Method POST -ContentType "application/json" -Body $body
-                        Write-Host "✅ Flight added successfully." -ForegroundColor Green
-                        $response | ConvertTo-Json -Depth 10
-                    }
-                    "PUT" {
-                        # ✅ FIX: Require all fields, not just one
-                        $id = Read-Host "Flight ID to update"
-                        $flightNumber = Read-Host "Enter flight number"
-                        $airline = Read-Host "Enter airline"
-                        $source = Read-Host "Enter source"
-                        $destination = Read-Host "Enter destination"
-                        $departureTime = Read-Host "Enter departure time"
-                        $arrivalTime = Read-Host "Enter arrival time"
-                        $availableSeats = Read-Host "Enter available seats"
-                        $price = Read-Host "Enter price"
-
-                        $body = @{
-                            flightNumber = $flightNumber
-                            airline = $airline
-                            source = $source
-                            destination = $destination
-                            departureTime = $departureTime
-                            arrivalTime = $arrivalTime
-                            availableSeats = [int]$availableSeats
-                            price = [double]$price
-                        } | ConvertTo-Json
-
-                        $response = Invoke-RestMethod -Uri "$baseUrl/api/flights/$id" -Method PUT -ContentType "application/json" -Body $body
-                        Write-Host "✅ Flight updated successfully." -ForegroundColor Green
-                        $response | ConvertTo-Json -Depth 10
-                    }
-                    "DELETE" {
-                        $id = Read-Host "Flight ID to delete"
-                        try {
-                            Invoke-RestMethod -Uri "$baseUrl/api/flights/$id" -Method DELETE
-                            Write-Host "✅ Flight deleted successfully." -ForegroundColor Green
-                        } catch {
-                            Write-Host "❌ Failed to delete flight: $($_.Exception.Message)" -ForegroundColor Red
+                        # Display in table
+                        if ($response -is [System.Array]) {
+                            $response | Format-Table flightNumber, airline, source, destination, departureTime, arrivalTime, availableSeats, price -AutoSize
+                        } else {
+                            $response | Format-Table flightNumber, airline, source, destination, departureTime, arrivalTime, availableSeats, price -AutoSize
                         }
+                    }
+# ----------------- ADD FLIGHT -----------------
+"POST" {
+    $flightNumber = Read-Host "Enter flight number"
+    $airline = Read-Host "Enter airline"
+    $source = Read-Host "Enter source"
+    $destination = Read-Host "Enter destination"
+    $departureTime = Read-Host "Enter departure time (yyyy-MM-dd HH:mm:ss)"
+    $arrivalTime = Read-Host "Enter arrival time (yyyy-MM-dd HH:mm:ss)"
+    $availableSeats = Read-Host "Enter available seats"
+    $price = Read-Host "Enter price"
+
+    $body = @{
+        flightNumber   = $flightNumber
+        airline        = $airline
+        source         = $source
+        destination    = $destination
+        departureTime  = $departureTime
+        arrivalTime    = $arrivalTime
+        availableSeats = [int]$availableSeats
+        price          = [double]$price
+    } | ConvertTo-Json
+
+    # Invoke POST
+    $response = Invoke-RestMethod -Uri "$baseUrl/api/flights" -Method POST -ContentType "application/json" -Body $body
+
+    # Show flight ID and message
+    Write-Host "✈️ $($response.message) Flight ID: $($response.id)" -ForegroundColor Green
+}
+
+
+# ----------------- UPDATE FLIGHT -----------------
+"PUT" {
+    $id = Read-Host "Enter flight ID to update"
+    $flightNumber = Read-Host "Enter flight number"
+    $airline = Read-Host "Enter airline"
+    $source = Read-Host "Enter source"
+    $destination = Read-Host "Enter destination"
+    $departureTime = Read-Host "Enter departure time (yyyy-MM-dd HH:mm:ss)"
+    $arrivalTime = Read-Host "Enter arrival time (yyyy-MM-dd HH:mm:ss)"
+    $availableSeats = Read-Host "Enter available seats"
+    $price = Read-Host "Enter price"
+
+    $body = @{
+        flightNumber   = $flightNumber
+        airline        = $airline
+        source         = $source
+        destination    = $destination
+        departureTime  = $departureTime
+        arrivalTime    = $arrivalTime
+        availableSeats = [int]$availableSeats
+        price          = [double]$price
+    } | ConvertTo-Json
+
+    $response = Invoke-RestMethod -Uri "$baseUrl/api/flights/$id" -Method PUT -ContentType "application/json" -Body $body
+    Write-Host "✈️ Flight updated successfully! Flight ID: $($response.id)" -ForegroundColor Green
+}
+
+                    "DELETE" {
+                        $id = Read-Host "Enter flight ID to delete"
+                        Invoke-RestMethod -Uri "$baseUrl/api/flights/$id" -Method DELETE
+                        Write-Host "✅ Flight deleted successfully." -ForegroundColor Green
                     }
                 }
             }
+
             "BOOKING" {
-                switch ($action.ToUpper()) {
-                    "GET" {
-                        $id = Read-Host "Enter booking ID (leave blank for all)"
-                        if ([string]::IsNullOrWhiteSpace($id)) {
-                            $response = Invoke-RestMethod -Uri "$baseUrl/api/bookings" -Method GET
-                        } else {
-                            $response = Invoke-RestMethod -Uri "$baseUrl/api/bookings/$id" -Method GET
-                        }
-                        $response | ConvertTo-Json -Depth 10
-                    }
+                switch ($operation) {
+                  "GET" {
+                      $id = Read-Host "Enter booking ID (leave blank for all)"
+                      try {
+                          if ([string]::IsNullOrWhiteSpace($id)) {
+                              $response = Invoke-RestMethod -Uri "$baseUrl/api/bookings" -Method GET
+                          }
+                          else {
+                              $response = Invoke-RestMethod -Uri "$baseUrl/api/bookings/$id" -Method GET
+                          }
+
+                          # Display in table
+                          if ($response -is [System.Array]) {
+                              $response | Format-Table id, @{Name="user";Expression={$_.user.name}}, @{Name="flight";Expression={$_.flight.flightNumber}}, seatsBooked, bookingDate, status -AutoSize
+                          } else {
+                              $response | Format-Table id, @{Name="user";Expression={$_.user.name}}, @{Name="flight";Expression={$_.flight.flightNumber}}, seatsBooked, bookingDate, status -AutoSize
+                          }
+                      }
+                      catch {
+                          if ($_.Exception.Response.StatusCode.value__ -eq 404) {
+                              Write-Host "❌ Booking not found." -ForegroundColor Yellow
+                          } else {
+                              Write-Host "❌ Error: $($_.Exception.Message)" -ForegroundColor Red
+                          }
+                      }
+                  }
+
                     "POST" {
-                        do {
-                            $userId = Read-Host "Enter user ID (leave blank if using name)"
-                            $userName = if ([string]::IsNullOrWhiteSpace($userId)) { Read-Host "Enter user name" } else { $null }
-                        } while ([string]::IsNullOrWhiteSpace($userId) -and [string]::IsNullOrWhiteSpace($userName))
-
-                        do {
-                            $flightId = Read-Host "Enter flight ID (leave blank if using flight number)"
-                            $flightNumber = if ([string]::IsNullOrWhiteSpace($flightId)) { Read-Host "Enter flight number" } else { $null }
-                        } while ([string]::IsNullOrWhiteSpace($flightId) -and [string]::IsNullOrWhiteSpace($flightNumber))
-
+                        $userId = Read-Host "Enter user ID"
+                        $flightId = Read-Host "Enter flight ID"
                         $seatsBooked = Read-Host "Enter number of seats to book"
 
-                        $uri = "$baseUrl/api/bookings/book?"
-                        if ($userId) { $uri += "userId=$userId&" } else { $uri += "userName=$userName&" }
-                        if ($flightId) { $uri += "flightId=$flightId&" } else { $uri += "flightNumber=$flightNumber&" }
-                        $uri += "seatsBooked=$seatsBooked"
-
-                        $response = Invoke-RestMethod -Uri $uri -Method POST
+                        Invoke-RestMethod -Uri "$baseUrl/api/bookings/book?userId=$userId&flightId=$flightId&seatsBooked=$seatsBooked" -Method POST
                         Write-Host "✅ Booking created successfully." -ForegroundColor Green
-                        $response | ConvertTo-Json -Depth 10
                     }
                     "DELETE" {
-                        $id = Read-Host "Booking ID to cancel"
-                        try {
-                            Invoke-RestMethod -Uri "$baseUrl/api/bookings/cancel/$id" -Method DELETE
-                            Write-Host "✅ Booking cancelled successfully." -ForegroundColor Green
-                        } catch {
-                            Write-Host "❌ Failed to cancel booking: $($_.Exception.Message)" -ForegroundColor Red
-                        }
+                        $id = Read-Host "Enter booking ID to cancel"
+                        Invoke-RestMethod -Uri "$baseUrl/api/bookings/cancel/$id" -Method DELETE
+                        Write-Host "✅ Booking cancelled successfully." -ForegroundColor Green
                     }
                 }
             }
+
             "USER" {
-                switch ($action.ToUpper()) {
+                switch ($operation) {
                     "GET" {
-                        $id = Read-Host "Enter user ID"
-                        $response = Invoke-RestMethod -Uri "$baseUrl/api/users/$id" -Method GET
-                        $response | ConvertTo-Json -Depth 10
+                        $idOrEmail = Read-Host "Enter user ID or email (leave blank for all)"
+                        if ([string]::IsNullOrWhiteSpace($idOrEmail)) {
+                            $response = Invoke-RestMethod -Uri "$baseUrl/api/users" -Method GET
+                        }
+                        elseif ($idOrEmail -match "^[0-9]+$") {
+                            $response = Invoke-RestMethod -Uri "$baseUrl/api/users/$idOrEmail" -Method GET
+                        } else {
+                            $response = Invoke-RestMethod -Uri "$baseUrl/api/users/email/$idOrEmail" -Method GET
+                        }
+
+                        # Display in table
+                        if ($response -is [System.Array]) {
+                            $response | Format-Table id, name, email -AutoSize
+                        } else {
+                            $response | Format-Table id, name, email -AutoSize
+                        }
                     }
                     "POST" {
-                        # ✅ FIX: Ensure JSON body is correct
                         $name = Read-Host "Enter name"
                         $email = Read-Host "Enter email"
                         $password = Read-Host "Enter password"
@@ -147,24 +184,17 @@ while ($true) {
                             password = $password
                         } | ConvertTo-Json
 
-                        $response = Invoke-RestMethod -Uri "$baseUrl/api/users/register" -Method POST -ContentType "application/json" -Body $body
+                        Invoke-RestMethod -Uri "$baseUrl/api/users/register" -Method POST -ContentType "application/json" -Body $body
                         Write-Host "✅ User registered successfully." -ForegroundColor Green
-                        $response | ConvertTo-Json -Depth 10
                     }
                     "DELETE" {
-                        $id = Read-Host "User ID to delete"
-                        try {
-                            # Use -Method DELETE without a body
-                            $response = Invoke-RestMethod -Uri "$baseUrl/api/users/$id" -Method DELETE -UseBasicParsing
-                            Write-Host "✅ User deleted successfully." -ForegroundColor Green
-                            # Optional: display server response if any
-                            if ($response) { $response | ConvertTo-Json -Depth 10 }
-                        } catch {
-                            Write-Host "❌ Failed to delete user: $($_.Exception.Message)" -ForegroundColor Red
-                        }
+                        $id = Read-Host "Enter user ID to delete"
+                        Invoke-RestMethod -Uri "$baseUrl/api/users/$id" -Method DELETE
+                        Write-Host "✅ User deleted successfully." -ForegroundColor Green
                     }
                 }
             }
+
         }
     } catch {
         Write-Host "❌ Error: $($_.Exception.Message)" -ForegroundColor Red
